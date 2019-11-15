@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Show Data</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+  <style type="text/css">
+
+  	table th{
+	   text-align: center; 
+	}
+	.table {
+	   margin: auto;
+	   width: 50% !important; 
+	}
+  </style>
+
+</head>
+
+<body>
+	<center>
+	<div class="container">
+	  <h2>Uploaded Files</h2>   
+	  <button type="button" id="refresh"class="btn btn-primary">Refresh</button>      
+	  <br>  
+	  <br>  
+	  <table class="table table-condensed  table-bordered table-striped text-center">
+	    <thead>
+	      <tr>
+	      	<th>ID</th>
+	        <th>Filename</th>
+	        <th>File Object</th>
+	        <th>Control</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+			{% for result in content %}
+				<tr id="tr{{result.id}}">
+					<td>{{ result.id }}</td>
+					<td>{{ result.name }}</td>
+					<td>
+						{{ result.file_path }}
+<!-- 						<video width="150" height="50" controls>
+						  <source src="../uploads/1_Minute_Timer.mp4" type="video/mp4">
+						  Your browser does not support the video tag.
+						</video> -->
+					</td>
+					<td>
+						<button class="btn btn-danger" id={{result.id}}>Delete</button>
+					</td>
+				</tr>
+			{% endfor %}
+	    </tbody>
+	  </table>
+	</div>
+	</center>
+</body>
+
+<script type="text/javascript">
+	
+	var refresh_button = document.getElementById("refresh");
+
+	refresh_button.addEventListener('click',function(){
+     	console.log("refresh clicked");
+     	location.reload();
+    });
+
+    $('button').on('click',function(){
+	    // alert($(this).attr('id'));
+	    var button_id = $(this).attr('id');
+	    console.log(button_id);
+
+	    $.ajax({
+			type: 'POST',
+			url: "/delete/",
+			data: {'file_id':button_id},
+			dataType: "text",
+			success: function(resultData) { 
+				console.log("Save Complete");
+				// console.log(resultData);
+				$('#tr'+button_id).remove();
+			}
+        });
+	});
+
+</script>
+
+
+</html>
