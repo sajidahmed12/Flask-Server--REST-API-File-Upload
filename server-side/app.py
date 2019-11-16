@@ -1,4 +1,5 @@
 
+import flask
 from flask import Flask, request, jsonify
 from flask import render_template, redirect, url_for
 
@@ -57,32 +58,41 @@ def home():
     result = FileObject_schema.dump(all_FileObjects)
     return render_template('show.html',content=result)
 
-@app.route("/upload", methods=['GET', 'POST', 'PUT'])
+@app.route("/upload/", methods=['GET', 'POST', 'PUT'])
 def upload():
+
+  if request.method == "GET":
+    return {"username": "admin","id": 42 }
 
   if request.method == "POST":
 
+    #print(flask.request.files['image'])
+    # print(request.json)
+    # print(request.form)
+    print(request.files['image'])
+    # print(request.form['name'])
     # name = request.form['name']
-    file = request.files['file']
-    temp_path = ""
+    # file = request.files['file']
+    # print(file)
+    # temp_path = ""
 
-    if file:
-      filename = secure_filename(file.filename)
-      temp_path = app.config['UPLOAD_FOLDER']+filename
-      file.save(temp_path)
-      # return home()
+    # if file:
+    #   print('got a file! oky..')
+    #   filename = secure_filename(file.filename)
+    #   temp_path = app.config['UPLOAD_FOLDER']+filename
+    #   file.save(temp_path)
 
-      name = filename
-      new_FileObject = FileObject(name, "../"+temp_path)
+    #   name = filename
+    #   new_FileObject = FileObject(name, "../"+temp_path)
 
-      db.session.add(new_FileObject)
-      db.session.commit()
-      return FileObject_schema.jsonify({"success"})
-    else:
-      return FileObject_schema.jsonify({"failed"})
+    #   db.session.add(new_FileObject)
+    #   db.session.commit()
+    #   return FileObject_schema.jsonify({"success"})
+    # else:
+    #   return FileObject_schema.jsonify({"failed"})
 
-    # return FileObject_schema.jsonify(new_FileObject)
-    return FileObject_schema.jsonify({})
+    #return FileObject_schema.jsonify({'request done!'})
+    return {'request':'done!'}
 
 
 @app.route('/delete/', methods=['GET','POST'])
@@ -94,13 +104,13 @@ def delete_file():
     db.session.delete(dump_file)
     db.session.commit()
 
-  return FileObject_schema.jsonify({})
+  return FileObject_schema.jsonify({'deleted'})
 
 # ---------------------------------------------------------------------------------
 
 # Run Server
 if __name__ == '__main__':
-  app.run(debug=True,host='0.0.0.0')
+  app.run(debug=True,host='0.0.0.0',port=8080)
 
 
 
