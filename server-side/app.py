@@ -66,21 +66,17 @@ def upload():
 
   if request.method == "POST":
 
-    #print(flask.request.files['image'])
-    # print(request.json)
-    # print(request.form)
-    print(request.files['image'])
-    # print(request.form['name'])
-    # name = request.form['name']
-    # file = request.files['file']
-    # print(file)
-    # temp_path = ""
+    print(request.files['file'])
+    print(request.form['file_type'])
 
-    # if file:
-    #   print('got a file! oky..')
-    #   filename = secure_filename(file.filename)
-    #   temp_path = app.config['UPLOAD_FOLDER']+filename
-    #   file.save(temp_path)
+    file = request.files['file']
+    temp_path = ""
+
+    if file:
+      print('got a file! oky..')
+      filename = secure_filename(file.filename)
+      temp_path = app.config['UPLOAD_FOLDER']+filename
+      file.save(temp_path)
 
     #   name = filename
     #   new_FileObject = FileObject(name, "../"+temp_path)
