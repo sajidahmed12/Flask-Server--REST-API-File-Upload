@@ -62,14 +62,14 @@ class ClientSide{
 	public static void main(String[] args) {
 		
 		OkHttpClient client = new OkHttpClient();
-		String baseUrl="http://127.0.0.1:8080/upload/";
+		String baseUrl="http://192.168.0.130:8080/upload/";
 
 		try
 		{	
 	        //String file_path = "data/a1.png";
             //String file_path = "data/a3.jpeg";
             String file_path = "data/a4.mp4";
-	        String response = OkHttpPostImage(client, baseUrl, img_path);
+	        String response = OkHttpPostImage(client, baseUrl, file_path);
 	        System.out.println(response);
 		}
 		catch(Exception e)
