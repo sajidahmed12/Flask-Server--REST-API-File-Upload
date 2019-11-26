@@ -1,11 +1,14 @@
 package com.example.fileuploader;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.PathUtils;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -27,9 +30,13 @@ import android.widget.Toast;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.nio.file.Files;
 
 import okhttp3.Call;
@@ -44,57 +51,59 @@ import okhttp3.Response;
 
 //https://stackoverflow.com/questions/23874842/how-to-select-a-file-with-selecting-from-gallery-or-file-manager-in-android
 //https://stackoverflow.com/questions/41193219/how-to-select-file-on-android-using-intent
+// https://www.baeldung.com/guide-to-okhttp
 
 
 public class MainActivity extends AppCompatActivity {
 
     Button upload_button;
     String tag="findme";
-
+    private Uri videoUri=null;
     final int ACTIVITY_CHOOSE_FILE = 0;
+    private  static  int VIDEO_REQUEST=101;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        permission_check();
-
-        upload_button = findViewById(R.id.upload_button);
-        upload_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Toast.makeText(MainActivity.this, "clicked!!", Toast.LENGTH_SHORT).show();
-                //onBrowse(v);
-                connectServer(v);
-                //selectImage(v);
-
-                // file_check();
-            }
-        });
-
-        ConnectivityManager cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        boolean msg = netInfo != null && netInfo.isConnectedOrConnecting();
-        Log.e("findme","internet: "+String.valueOf(msg));
     }
 
-    public void selectImage(View v) {
-        Intent intent = new Intent();
-        intent.setType("*/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(intent, 0);
+    public void captureVideo(View view) {
+        Intent videoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        if(videoIntent.resolveActivity(getPackageManager())!=null){
+            startActivityForResult(videoIntent,VIDEO_REQUEST);
+        }
+    }
+    @SuppressLint("MissingSuperCall")
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == VIDEO_REQUEST && resultCode == RESULT_OK) {
+            videoUri = data.getData();
+        }
+    }
+    private String getPath(Uri uri) {
+        String[] projection = { MediaStore.Video.Media.DATA };
+        Cursor cursor = managedQuery(uri, projection, null, null, null);
+        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
+        cursor.moveToFirst();
+        return cursor.getString(column_index);
     }
 
-    void connectServer(View v){
+    public  void connectServer(View view){
+
+        String file_path=getPath(videoUri);
+
+        Log.e(tag,file_path);
 
         OkHttpClient client = new OkHttpClient();
-        String baseUrl="http://192.168.0.102:8080/upload/";
+        String baseUrl="http://192.168.0.101:8080/upload/";
+        Log.e(tag,"in connect server");
 
         try
         {
-            String file_path = "/sdcard/Download/hello.jpg";
+            //String file_path = "/sdcard/Download/hello.mp4";
 
             MediaType MEDIA_TYPE_ALL = MediaType.parse("*/*");
 
@@ -112,14 +121,21 @@ public class MainActivity extends AppCompatActivity {
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
-                    Log.e("findme","failed to post!" + e.getMessage());
+                    Log.e(tag,"failed to post!" + e.getMessage());
                     e.printStackTrace();
                 }
 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
-                    //Log.e("findme",response.body().toString());
-                    Log.e(tag,String.valueOf(response.code()));
+                    String jsonData = response.body().string();
+                    try {
+                        JSONObject Jobject = new JSONObject(jsonData);
+                        Log.e(tag,Jobject.toString());
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                     Log.e("findme",response.body().toString());
+                    // Log.e(tag,String.valueOf(response.code()));
                 }
             });
 
@@ -130,8 +146,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-
-    public void onBrowse(View view) {
+    
+    private void onBrowse(View view) {
 
         Intent chooseFile, intent;
 
@@ -142,41 +158,30 @@ public class MainActivity extends AppCompatActivity {
         intent = Intent.createChooser(chooseFile, "Choose a file");
         startActivityForResult(intent, ACTIVITY_CHOOSE_FILE);
     }
-
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    private void selectImage(View v) {
+        Intent intent = new Intent();
+        intent.setType("*/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(intent, 0);
+    }
+    protected void aonActivityResult(int requestCode, int resultCode, Intent data) {
 
         super.onActivityResult(requestCode, resultCode, data);
         String path = "";
 
-        if (resultCode != RESULT_OK)
-            return;
-
-        if (requestCode == ACTIVITY_CHOOSE_FILE) {
-            Uri uri = data.getData();
-            Log.e(tag, "UriPath  = " + uri);
-            Log.e(tag, "UriPath  = " + uri.getPath());
-
-            String FilePath = getPathVideo(uri); // should the path be here in this string
-            Log.e(tag, "FilePath  = " + FilePath);
+        if (resultCode == RESULT_OK)
+        {
+            Uri selectedImageUri = data.getData();
+//            String s = getPathFile(selectedImageUri);
+//            Log.e(tag,s);
         }
     }
-    private String getPathVideo(Uri contentUri) {
-        String[] proj = { MediaStore.Video.Media.DATA };
-//        Cursor cursor = managedQuery(contentUri, projection, null, null, null);
-        Cursor cursor       = getContentResolver().query( contentUri, proj, null, null,null);
-        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
-        cursor.moveToFirst();
-        return cursor.getString(column_index);
+    private void internet_check() {
+        ConnectivityManager cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        boolean msg = netInfo != null && netInfo.isConnectedOrConnecting();
+        Log.e("findme","internet: "+String.valueOf(msg));
     }
-    public String getPathImg(Uri contentUri) {
-        String [] proj      = {MediaStore.Images.Media.DATA};
-        Cursor cursor       = getContentResolver().query( contentUri, proj, null, null,null);
-        if (cursor == null) return null;
-        int column_index    = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-        cursor.moveToFirst();
-        return cursor.getString(column_index);
-    }
-
     private void file_check(){
         // File file = new File("/sdcard/Download/hello.txt");
         File file = new File("/sdcard/Download/hello.jpg");
